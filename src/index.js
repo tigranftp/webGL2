@@ -37,6 +37,21 @@ const fsSource = 'precision mediump float;\n' +
     '  gl_FragColor = vec4(fragColor, 1.0);\n' +
     '}'
 
+const fsSourceLines = 'precision mediump float;\n' +
+    'varying vec3 fragColor;\n' +
+    'varying vec3 fragPosition;\n' +
+    'void main()\n' +
+    '{\n' +
+    'int x = int(fragPosition.x * 10.0 + 5.0) ;\n' +
+    'float shouldColorize = mod(float(x), 2.0);\n' +
+    'if ((shouldColorize == 0.0)){\n' +
+    'gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n' +
+    '}\n' +
+    'else{' +
+    'gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);' +
+    '}\n' +
+    '}'
+
 function loadShader(gl, type, source) {
     const shader = gl.createShader(type);
 // Send the source to the shader object
@@ -242,3 +257,62 @@ gl.vertexAttribPointer(vertColorAttribute, 3, gl.FLOAT, false, 6*Float32Array.BY
 gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
 gl.drawArrays(gl.TRIANGLES, 0, 36);
+
+
+
+let canvas3 = document.getElementById("squareCanvas");
+initWebGL(canvas3); // инициализация контекста GL – сами пишем
+
+const shaderProgramLineSquare = initShaderProgram(gl, vsSource, fsSourceLines);
+// продолжать только если WebGL доступен и работает
+
+if (gl)
+{ // продолжать только если WebGL доступен и работает
+    // Устанавливаем размер вьюпорта
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    // установить в качестве цвета очистки буфера цвета черный, полная непрозрачность
+    gl.clearColor(0.5, 0.5, .5, 1);
+    // включает использование буфера глубины
+    gl.enable(gl.DEPTH_TEST);
+    // определяет работу буфера глубины: более ближние объекты перекрывают дальние
+    gl.depthFunc(gl.LEQUAL);
+    // очистить буфер цвета и буфер глубины
+    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+}
+function initBuffersSquare()
+{
+    let squareVerticesBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
+
+    let vertices =
+        [
+            -0.5, -0.5, 0.0,     0.2, 0.3, 0.5,
+            -0.5, 0.5, 0.0,     0.2, 0.3, 0.5,
+            0.5, -0.5, 0.0,     0.2, 0.3, 0.5,
+            0.5, 0.5, 0.0,     0.2, 0.3, 0.5,
+        ];
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+}
+
+initBuffersSquare()
+
+vertexPositionAttribute = gl.getAttribLocation(shaderProgramLineSquare, "vertPosition");
+vertColorAttribute = gl.getAttribLocation(shaderProgramLineSquare, "vertColor");
+gl.enableVertexAttribArray(vertexPositionAttribute);
+gl.enableVertexAttribArray(vertColorAttribute);
+gl.useProgram(shaderProgramLineSquare);
+
+matWorldUniformLocation = gl.getUniformLocation(shaderProgramLineSquare, 'mWorld');
+
+worldMatrix = new Float32Array(16);
+glMatrix.mat4.identity(worldMatrix);
+
+gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
+
+gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 6*Float32Array.BYTES_PER_ELEMENT, 0);
+gl.vertexAttribPointer(vertColorAttribute, 3, gl.FLOAT, false, 6*Float32Array.BYTES_PER_ELEMENT, 3*Float32Array.BYTES_PER_ELEMENT);
+
+gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+
+gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
